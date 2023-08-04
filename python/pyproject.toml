@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "registration-app"
+version = "0.1.0"
+description = "User registration and authentication app POC"
+authors = ["xosneha <sneha.shinde350@gmail.com>"]
+packages = [{include = "registration_app"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.101.0"
+uvicorn = "^0.23.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+black = "^23.7.0"
+flake8 = "^6.1.0"
+isort = "^5.12.0"
+
+[tool.poetry.scripts]
+launch="registration_app.api.main:launch"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
