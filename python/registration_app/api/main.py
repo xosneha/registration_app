@@ -1,13 +1,22 @@
 """Module housing API routes."""
-from fastapi import FastAPI
 import uvicorn
+from fastapi import FastAPI
+
+from registration_app.orm.database import create_db_and_tables
 
 app = FastAPI()
+
+
+@app.on_event("startup")
+def on_startup():
+    create_db_and_tables()
+
 
 @app.get("/")
 async def root():
     """Test root."""
     return {"message": "Hello World"}
+
 
 def launch():
     """Entrypoint for the backend."""

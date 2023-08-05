@@ -7,8 +7,13 @@ packages = [{include = "registration_app"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
+sqlmodel = "^0.0.8"
 fastapi = "^0.101.0"
 uvicorn = "^0.23.2"
+pydantic = {version = "<2", extras = ["email"]}
+python-dotenv = "^1.0.0"
+psycopg2-binary = "^2.9.7"
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
