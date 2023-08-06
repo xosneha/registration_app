@@ -13,6 +13,7 @@ uvicorn = "^0.23.2"
 pydantic = {version = "<2", extras = ["email"]}
 python-dotenv = "^1.0.0"
 psycopg2-binary = "^2.9.7"
+ldap3 = "^2.9.1"
 
 
 [tool.poetry.group.dev.dependencies]

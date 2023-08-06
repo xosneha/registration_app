@@ -1,0 +1,22 @@
+dn: ou=Users,dc=registration-app,dc=com
+changetype: add
+objectclass: organizationalUnit
+ou: Users
+
+dn: cn=xosneha,ou=Users,dc=registration-app,dc=com
+changetype: add
+cn: xosneha
+mail: sneha.shinde350@gmail.com
+objectclass: inetOrgPerson
+objectclass: top
+sn: Shinde
+userpassword: jiggly
+
+dn: cn=yann,ou=Users,dc=registration-app,dc=com
+changetype: add
+cn: yann
+mail: yann.shinde350@gmail.com
+objectclass: inetOrgPerson
+objectclass: top
+sn: Shindee
+userpassword: pokemon123
