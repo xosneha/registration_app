@@ -15,10 +15,11 @@ from jose import JWTError, jwt
 from ldap3 import Connection, Server, Tls
 from ldap3.core.exceptions import LDAPException as _LDAPException
 from pydantic import ValidationError
-
-from registration_app import load_env
 from registration_app.api.models import TokenData
 from registration_app.exceptions import LDAPException
+from registration_app.orm.models import UserInfoCreate
+
+from registration_app import load_env
 
 load_env()
 
@@ -64,32 +65,48 @@ def decode_access_token(token: str) -> Optional[TokenData]:
         return None
 
 
-def user_authenticate(username: str, password: str) -> bool:
+def establish_ldap_connection(user_dn: str, password: str) -> Connection:
     """
-    Authenticate user against LDAP.
+    Establish a connection to the OpenLDAP backend.
 
-    :param username: The username of the user attempting to authenticate.
-    :param password: The password of the authenticating user.
-    :returns: `True` if the user authenticated successfully, `False` if there are credential errors.
+    :param user_dn: The distinguished name of the user.
+    :param password: The password to use in th connection.
+    :raises _LDAPException: If there is any exception in creating the server or connection. Note
+    that `Connection.result` should still be checked for exceptions.
+    :return: The established connection.
     """
-    user_string = f"cn={username},ou=Users,{os.environ['LDAP_BASE_DN']}"
     TLS = Tls(
         local_certificate_file=Path(os.environ["FASTAPI_LDAP_CERTS"])
         / f"{os.environ['FASTAPI_LDAP_CERT_NAME']}.crt",
         local_private_key_file=Path(os.environ["FASTAPI_LDAP_CERTS"])
         / f"{os.environ['FASTAPI_LDAP_CERT_NAME']}.key",
     )
+    server = Server(
+        os.environ["LDAP_HOST"], port=636, use_ssl=True, get_info="ALL", tls=TLS
+    )
+    return Connection(server, user=user_dn, password=password, raise_exceptions=False)
+
+
+def user_authenticate(username: str, password: str) -> bool:
+    """
+    Authenticate user against LDAP.
+
+    :param username: The username of the user attempting to authenticate.
+    :param password: The password of the authenticating user.
+    :raises LDAPException: If there is an issue establishing the ldap connection (or other
+        unexpected errors.)
+    :returns: `True` if the user authenticated successfully, `False` if there are credential errors.
+    """
     try:
-        server = Server(
-            os.environ["LDAP_HOST"], port=636, use_ssl=True, get_info="ALL", tls=TLS
-        )
-        connection = Connection(
-            server, user=user_string, password=password, raise_exceptions=False
+        connection = establish_ldap_connection(
+            user_dn=f"cn={username},ou=Users,{os.environ['LDAP_BASE_DN']}",
+            password=password,
         )
     except _LDAPException as e:
         raise LDAPException(message=e.message)
 
     if connection.bind():
+        connection.unbind()
         return True
 
     failure_reason = connection.result["description"]
@@ -97,3 +114,44 @@ def user_authenticate(username: str, password: str) -> bool:
         return False
 
     raise LDAPException(message=failure_reason)
+
+
+def create_user_in_ldap(user: UserInfoCreate) -> bool:
+    """
+    Create a user in LDAP.
+
+    :param user: The user to create.
+    :raises LDAPException: If there is an issue establishing the ldap connection (or other
+        unexpected errors.)
+    :return: True if the user was created, False otherwise.
+    """
+    try:
+        connection = establish_ldap_connection(
+            user_dn=f"cn=admin,{os.environ['LDAP_BASE_DN']}",
+            password=os.environ["LDAP_ADMIN_PASSWORD"],
+        )
+    except _LDAPException as e:
+        raise LDAPException(message=e.message)
+
+    if not connection.bind():
+        raise LDAPException(
+            message="There was an issue with registration. "
+            "Please contact the administrator if the issue continues."
+        )
+    connection.add(
+        f"cn={user.username},ou=Users,{os.environ['LDAP_BASE_DN']}",
+        ["inetOrgPerson", "top"],
+        {
+            "sn": user.last,
+            "mail": user.email,
+            "userpassword": user.password.get_secret_value(),
+        },
+    )
+    result = connection.result
+    connection.unbind()
+    if result["result"]:
+        if result["description"] == "entryAlreadyExists":
+            return False
+        else:
+            raise LDAPException(message=result["description"])
+    return True

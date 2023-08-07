@@ -1,10 +1,10 @@
 """Module housing database connection and session management."""
 import os
 
+from registration_app.orm.models import *
 from sqlmodel import Session, SQLModel, create_engine
 
 from registration_app import load_env
-from registration_app.orm.models import *
 
 load_env()
 
@@ -23,5 +23,4 @@ def create_db_and_tables():
 
 def get_session():
     """Get a session to make DB queries."""
-    with Session(ENGINE) as session:
-        yield session
+    return Session(ENGINE)

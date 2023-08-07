@@ -41,6 +41,9 @@ services:
     build:
       context: "$PWD/../python"
       dockerfile: "$PWD/fastapi/Dockerfile"
+    depends_on:
+      - "db"
+      - "ldap"
     environment:
       FASTAPI_ENV_PATH: "$FASTAPI_ENV_PATH"
     volumes:

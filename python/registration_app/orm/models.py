@@ -1,29 +1,46 @@
 """Module housing all the models stored in the application."""
 import datetime
 from typing import Optional
+from uuid import uuid4
 
-from pydantic import EmailStr, validator
+from pydantic import EmailStr
+from pydantic import Field as PydanticField
+from pydantic import SecretStr, validator
 from pydantic.networks import IPvAnyAddress
 from sqlmodel import Field, SQLModel, create_engine
 
 
-class UserInfo(SQLModel, table=True):
-    """Creates basic user information table"""
+class UserInfoBase(SQLModel):
+    """Class housing fields shared across all representation of `User`s."""
 
-    user_id: Optional[int] = Field(default=None, primary_key=True)
-    username: str
-    email: EmailStr
+    username: str = Field(primary_key=True)
     first: str
     last: str
-    thumbnail: str
+
+
+class UserInfo(UserInfoBase, table=True):
+    """Information about a particular user, as stored in the database."""
+
+    thumbnail: str = "TODO"
+
+    @staticmethod
+    def generate_thumbnail():
+        """Generate a random thumbnail."""
+
+
+class UserInfoCreate(UserInfoBase):
+    """Representation of the required fields needed to create a `UserInfo` entry."""
+
+    email: EmailStr
+    password: SecretStr = PydanticField(min_length=6)
 
 
 # TODO add browser history
 class SessionInfo(SQLModel, table=True):
     """Creates user session information table"""
 
-    session_id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(default=None, foreign_key="userinfo.user_id")
+    session_id: Optional[int] = Field(default=uuid4, primary_key=True)
+    username: str = Field(foreign_key="userinfo.username")
     time: datetime.datetime
     ip: str
     country: str
