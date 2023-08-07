@@ -1,6 +1,6 @@
 services:
   db:
-    container_name: "postgres"
+    container_name: "$POSTGRES_HOST"
     image: postgres
     restart: always
     environment:
@@ -18,7 +18,7 @@ services:
     build:
       context: "$PWD/openldap"
       dockerfile: "$PWD/openldap/Dockerfile"
-    container_name: openldap-server
+    container_name: "$LDAP_HOST"
     hostname: "ldap.${LDAP_DOMAIN}"
     restart: always
     environment:
@@ -46,7 +46,7 @@ services:
     volumes:
       - "$PWD/.env:$FASTAPI_ENV_PATH"
       # TODO: Determine if this is the best way to share certificates between containers
-      - "ldap_certs:${FASTAPI_LDAP_CERTS_PATH}:ro"
+      - "ldap_certs:${FASTAPI_LDAP_CERTS}:ro"
     ports:
       # TODO figure out what is on port 5000, kill it, and change this to port 5000
       - "5001:5001"
