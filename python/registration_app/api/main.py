@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import Body, Depends, FastAPI, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from registration_app.api.models import JWTToken
+from registration_app.api.models import JWTToken, UserProfileResponse
 from registration_app.authenticate import (
     create_access_token,
     create_user_in_ldap,
@@ -14,6 +14,8 @@ from registration_app.orm.database import create_db_and_tables, get_session
 from registration_app.orm.models import SessionInfo, UserInfo, UserInfoCreate
 from datetime import datetime, timezone
 import re
+from sqlmodel import select
+from sqlalchemy.orm import load_only
 
 app = FastAPI()
 TOKEN_URL = "user_login"
@@ -68,6 +70,24 @@ async def user_login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     
     return {"access_token": access_token, "token_type": "bearer"}
 
+@app.get(f"/user_profile", status_code=200, response_model=UserProfileResponse)
+async def user_profile(username: str):
+
+    """Get user profile information from the db"""
+    with get_session() as session:
+        # QUERIES WE WANT TO CONVERT 
+        # SELECT * FROM userinfo WHERE username='string' -> UN, last, first, thumbnail
+        # SELECT * FROM sessioninfo WHERE username='string'
+        user_basics = session.exec(select(UserInfo).where(UserInfo.username == username))
+        user_basics = user_basics.first()
+        
+        user_sessions = session.exec(select(SessionInfo).where(SessionInfo.username == username).options(load_only("time", "ip", "browser", "country")))
+        user_sessions=user_sessions.all()
+        
+        print(type(user_basics))
+        print(type(user_sessions))
+    
+    return {"user_basics": user_basics, "user_sessions": user_sessions}
 # TODO Add user country to frontend
 def generate_session_info(request: Request, username, user_country: str) -> SessionInfo:
     user_ip = request.client.host
