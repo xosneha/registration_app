@@ -1,11 +1,11 @@
 """Module housing all the models stored in the application."""
 import datetime
 from typing import Optional
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
 from pydantic import EmailStr
 from pydantic import Field as PydanticField
-from pydantic import SecretStr, validator, ValidationError
+from pydantic import SecretStr, ValidationError, validator
 from pydantic.networks import IPvAnyAddress
 from sqlmodel import Field, SQLModel
 
@@ -42,7 +42,7 @@ class SessionInfo(SQLModel, table=True):
     session_id: Optional[UUID] = Field(default_factory=uuid4, primary_key=True)
     username: str = Field(foreign_key="userinfo.username")
     time: datetime.datetime
-    ip: str 
+    ip: str
     country: str
     browser: str
 
@@ -51,9 +51,18 @@ class SessionInfo(SQLModel, table=True):
         """Ensure that the ip field is a valid IP address."""
         IPvAnyAddress.validate(ip)
         return ip
+
     @validator("browser")
     def ensure_browser_is_valid(cls, browser: str):
-        valid_browsers = ["Firefox", "Seamonkey", "Chrome", "Chromium", "Safari", "Opera", "Other"]
+        valid_browsers = [
+            "Firefox",
+            "Seamonkey",
+            "Chrome",
+            "Chromium",
+            "Safari",
+            "Opera",
+            "Other",
+        ]
         if browser in valid_browsers:
             return browser
         else:

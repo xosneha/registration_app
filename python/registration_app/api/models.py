@@ -2,6 +2,7 @@
 from typing import Literal
 
 from pydantic import BaseModel
+
 from registration_app.orm.models import UserInfo
 
 
@@ -21,8 +22,10 @@ class TokenData(BaseModel):
     username: str
     """Username of user who is logged in."""
 
+
 class UserProfileResponse(BaseModel):
     """User profile information returned as a response from the profile endpoint"""
+
     # TODO better docstrings here?:w
     user_basics: dict
     """Basic information of the user, specifically the first name, last name, and thumbnail"""

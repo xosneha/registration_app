@@ -15,11 +15,11 @@ from jose import JWTError, jwt
 from ldap3 import Connection, Server, Tls
 from ldap3.core.exceptions import LDAPException as _LDAPException
 from pydantic import ValidationError
+
+from registration_app import load_env
 from registration_app.api.models import TokenData
 from registration_app.exceptions import LDAPException
 from registration_app.orm.models import UserInfoCreate
-
-from registration_app import load_env
 
 load_env()
 
@@ -99,21 +99,28 @@ def user_authenticate(username: str, password: str) -> bool:
     """
     try:
         connection = establish_ldap_connection(
-            user_dn=f"cn={username},ou=Users,{os.environ['LDAP_BASE_DN']}",
-            password=password,
+            user_dn=f"cn=admin,{os.environ['LDAP_BASE_DN']}",
+            password=os.environ["LDAP_ADMIN_PASSWORD"],
         )
     except _LDAPException as e:
         raise LDAPException(message=e.message)
 
-    if connection.bind():
+    if not connection.bind():
+        raise LDAPException(
+            message="There was an issue with registration. "
+            "Please contact the administrator if the issue continues."
+        )
+
+    auth_or_no = connection.search(
+        search_base={os.environ["LDAP_BASE_DN"]},
+        search_filter=f"(&(|(cn={username})(mail={username}))(userpassword={password}))",
+    )
+
+    if connection.result["description"] == "success":
         connection.unbind()
-        return True
-
-    failure_reason = connection.result["description"]
-    if failure_reason == "invalidCredentials":
-        return False
-
-    raise LDAPException(message=failure_reason)
+        return auth_or_no
+    else:
+        raise LDAPException(message=connection.result["description"])
 
 
 def create_user_in_ldap(user: UserInfoCreate) -> bool:

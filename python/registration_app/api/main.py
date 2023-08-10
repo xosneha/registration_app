@@ -1,21 +1,20 @@
 """Module housing API routes."""
+import re
+from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import Body, Depends, FastAPI, HTTPException, status, Request
+from fastapi import Body, Depends, FastAPI, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy.orm import load_only
+from sqlmodel import select
+
 from registration_app.api.models import JWTToken, UserProfileResponse
-from registration_app.authenticate import (
-    create_access_token,
-    create_user_in_ldap,
-    decode_access_token,
-    user_authenticate,
-)
+from registration_app.authenticate import (create_access_token,
+                                           create_user_in_ldap,
+                                           decode_access_token,
+                                           user_authenticate)
 from registration_app.orm.database import create_db_and_tables, get_session
 from registration_app.orm.models import SessionInfo, UserInfo, UserInfoCreate
-from datetime import datetime, timezone
-import re
-from sqlmodel import select
-from sqlalchemy.orm import load_only
 
 app = FastAPI()
 TOKEN_URL = "user_login"
@@ -51,7 +50,9 @@ async def root():
 
 
 @app.post(f"/{TOKEN_URL}", status_code=201, response_model=JWTToken)
-async def user_login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], request: Request):
+async def user_login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], request: Request
+):
     """Authenticate to the application."""
     # TODO support email based authentication
     if not user_authenticate(form_data.username, form_data.password):
@@ -61,33 +62,37 @@ async def user_login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
             headers={"WWW-Authenticate": "Bearer"},
         )
     # TODO Fix this
-    session_info = generate_session_info(request=request, username=form_data.username, user_country="Fakestr")
+    session_info = generate_session_info(
+        request=request, username=form_data.username, user_country="Fakestr"
+    )
     with get_session() as session:
         session.add(SessionInfo.from_orm(session_info))
         session.commit()
 
     access_token = create_access_token(username=form_data.username)
-    
+
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 @app.get(f"/user_profile", status_code=200, response_model=UserProfileResponse)
 async def user_profile(username: str):
-
     """Get user profile information from the db"""
     with get_session() as session:
-        # QUERIES WE WANT TO CONVERT 
-        # SELECT * FROM userinfo WHERE username='string' -> UN, last, first, thumbnail
-        # SELECT * FROM sessioninfo WHERE username='string'
-        user_basics = session.exec(select(UserInfo).where(UserInfo.username == username))
+        user_basics = session.exec(
+            select(UserInfo).where(UserInfo.username == username)
+        )
         user_basics = user_basics.first()
-        
-        user_sessions = session.exec(select(SessionInfo).where(SessionInfo.username == username).options(load_only("time", "ip", "browser", "country")))
-        user_sessions=user_sessions.all()
-        
-        print(type(user_basics))
-        print(type(user_sessions))
-    
+
+        user_sessions = session.exec(
+            select(SessionInfo)
+            .where(SessionInfo.username == username)
+            .options(load_only("time", "ip", "browser", "country"))
+        )
+        user_sessions = user_sessions.all()
+
     return {"user_basics": user_basics, "user_sessions": user_sessions}
+
+
 # TODO Add user country to frontend
 def generate_session_info(request: Request, username, user_country: str) -> SessionInfo:
     user_ip = request.client.host
@@ -103,7 +108,7 @@ def generate_session_info(request: Request, username, user_country: str) -> Sess
     elif "Chromium" in user_agent:
         browser = "Chromium"
     elif "Chrome" in user_agent:
-        edge_pattern = re.compile(['Edg.*.xyz'])
+        edge_pattern = re.compile(["Edg.*.xyz"])
         if not edge_pattern.match(user_agent):
             browser = "Chrome"
     elif "Safari" in user_agent:
@@ -111,18 +116,28 @@ def generate_session_info(request: Request, username, user_country: str) -> Sess
     elif "OPR" or "Opera" in user_agent:
         browser = "Opera"
 
-    return SessionInfo(username=username, time=user_time, ip=user_ip, browser=browser, country=user_country)
-    
+    return SessionInfo(
+        username=username,
+        time=user_time,
+        ip=user_ip,
+        browser=browser,
+        country=user_country,
+    )
+
 
 @app.post("/user_register", status_code=201, response_model=JWTToken)
-async def user_registration(user: Annotated[UserInfoCreate, Body(embed=True)], session: SessionInfo, request: Request):
+async def user_registration(
+    user: Annotated[UserInfoCreate, Body(embed=True)], request: Request
+):
     if not create_user_in_ldap(user=user):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Username is already taken",
         )
     # TODO Fix
-    session_info = generate_session_info(request=request, username=user.username, user_country="fakeStr")
+    session_info = generate_session_info(
+        request=request, username=user.username, user_country="fakeStr"
+    )
     with get_session() as session:
         session.add(UserInfo.from_orm(user))
         session.commit()

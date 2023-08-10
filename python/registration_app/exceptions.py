@@ -1,6 +1,7 @@
 """Module defining application-wide exceptions."""
 # TODO Clean up poetry
 
+
 class LDAPException(Exception):
     """Exceptions that may occur when interacting with LDAP."""
 
