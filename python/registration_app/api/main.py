@@ -4,7 +4,9 @@ import re
 from datetime import datetime, timezone
 from typing import Annotated, Any
 
-from fastapi import Body, Depends, FastAPI, HTTPException, Header, Request, status
+import ipinfo
+from fastapi import Body, Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import load_only
 from sqlmodel import select
@@ -22,9 +24,14 @@ from registration_app.orm.models import SessionInfo, UserInfo, UserInfoCreate
 
 load_env()
 
-import ipinfo
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 TOKEN_URL = "user_login"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=TOKEN_URL)
 
@@ -59,7 +66,7 @@ def generate_session_info(request: Request, ip: str, username: str) -> SessionIn
     elif "Chromium" in user_agent:
         browser = "Chromium"
     elif "Chrome" in user_agent:
-        edge_pattern = re.compile(["Edg.*.xyz"])
+        edge_pattern = re.compile("Edg.*.xyz")
         if not edge_pattern.match(user_agent):
             browser = "Chrome"
     elif "Safari" in user_agent:
@@ -87,7 +94,9 @@ def on_startup():
 
 @app.post(f"/{TOKEN_URL}", status_code=201, response_model=JWTToken)
 async def user_login(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], x_real_ip: Annotated[str, Header()], request: Request,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    x_real_ip: Annotated[str, Header()],
+    request: Request,
 ):
     """Authenticate to the application."""
     if not user_authenticate(form_data.username, form_data.password):
@@ -96,7 +105,9 @@ async def user_login(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    session_info = generate_session_info(ip=x_real_ip, request=request, username=form_data.username)
+    session_info = generate_session_info(
+        ip=x_real_ip, request=request, username=form_data.username
+    )
     with get_session() as session:
         session.add(SessionInfo.from_orm(session_info))
         session.commit()
@@ -128,7 +139,9 @@ async def user_profile(user: Annotated[TokenData, Depends(get_user)]):
 
 @app.post("/user_register", status_code=201, response_model=JWTToken)
 async def user_registration(
-    user: Annotated[UserInfoCreate, Body(embed=True)], x_real_ip: Annotated[str, Header()], request: Request
+    user: Annotated[UserInfoCreate, Body(embed=True)],
+    x_real_ip: Annotated[str, Header()],
+    request: Request,
 ):
     result, reason = create_user_in_ldap(user=user)
     if not result:
@@ -136,7 +149,9 @@ async def user_registration(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"{reason.capitalize()} is already taken",
         )
-    session_info = generate_session_info(request=request, ip=x_real_ip, username=user.username)
+    session_info = generate_session_info(
+        request=request, ip=x_real_ip, username=user.username
+    )
     with get_session() as session:
         session.add(UserInfo.from_orm(user))
         session.commit()

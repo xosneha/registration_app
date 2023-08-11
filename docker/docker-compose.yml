@@ -48,10 +48,8 @@ services:
       FASTAPI_ENV_PATH: "$FASTAPI_ENV_PATH"
     volumes:
       - "$PWD/.env:$FASTAPI_ENV_PATH"
-      # TODO: Determine if this is the best way to share certificates between containers
       - "ldap_certs:${FASTAPI_LDAP_CERTS}:ro"
     ports:
-      # TODO Change this to port 5000 when deploying
       - "5001:5001"
     networks:
       - registration-app
