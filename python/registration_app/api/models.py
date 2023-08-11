@@ -26,9 +26,19 @@ class TokenData(BaseModel):
 class UserProfileResponse(BaseModel):
     """User profile information returned as a response from the profile endpoint"""
 
-    # TODO better docstrings here?:w
-    user_basics: dict
-    """Basic information of the user, specifically the first name, last name, and thumbnail"""
+    user_basics: dict[str, str]
+    """Basic information of the user
+    :username: 
+    :email:
+    :first:
+    :last: 
+    """
 
     user_sessions: list
-    """Information on the user's sessions, specifically the IP, country, time, and browser of previous sessions. Also includes session_id since it is the primary key."""
+    """Information on the user's sessions, including
+    :ip: User's IP in all sessions
+    :country: User's country in all sessions
+    :time: Date and time (UTC) that the user logged in/registered
+    browser: User's browser 
+    Also includes session_id since it is the primary key.
+    """

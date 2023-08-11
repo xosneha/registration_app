@@ -1,5 +1,4 @@
 """Module defining application-wide exceptions."""
-# TODO Clean up poetry
 
 
 class LDAPException(Exception):

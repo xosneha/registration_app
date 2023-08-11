@@ -1,5 +1,6 @@
 """Module housing all the models stored in the application."""
 import datetime
+from random import randint
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -21,11 +22,10 @@ class UserInfoBase(SQLModel):
 class UserInfo(UserInfoBase, table=True):
     """Information about a particular user, as stored in the database."""
 
-    thumbnail: str = "TODO"
-
-    @staticmethod
-    def generate_thumbnail():
-        """Generate a random thumbnail."""
+    # TODO Put this in
+    thumbnail: bytes = Field(
+        default_factory=lambda: bytes([randint(1, 3) for _ in range(1024)])
+    )
 
 
 class UserInfoCreate(UserInfoBase):

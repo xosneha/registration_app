@@ -123,14 +123,14 @@ def user_authenticate(username: str, password: str) -> bool:
         raise LDAPException(message=connection.result["description"])
 
 
-def create_user_in_ldap(user: UserInfoCreate) -> bool:
+def create_user_in_ldap(user: UserInfoCreate) -> tuple[bool, str]:
     """
     Create a user in LDAP.
 
     :param user: The user to create.
     :raises LDAPException: If there is an issue establishing the ldap connection (or other
         unexpected errors.)
-    :return: True if the user was created, False otherwise.
+    :return: True if the user was created, False with the reason for lack of creation otherwise.
     """
     try:
         connection = establish_ldap_connection(
@@ -145,6 +145,14 @@ def create_user_in_ldap(user: UserInfoCreate) -> bool:
             message="There was an issue with registration. "
             "Please contact the administrator if the issue continues."
         )
+    registered_email = connection.search(
+        search_base={os.environ["LDAP_BASE_DN"]},
+        search_filter=f"(mail={user.email})",
+    )
+
+    if registered_email:
+        return (False, "email")
+
     connection.add(
         f"cn={user.username},ou=Users,{os.environ['LDAP_BASE_DN']}",
         ["inetOrgPerson", "top"],
@@ -158,7 +166,7 @@ def create_user_in_ldap(user: UserInfoCreate) -> bool:
     connection.unbind()
     if result["result"]:
         if result["description"] == "entryAlreadyExists":
-            return False
+            return (False, "username")
         else:
             raise LDAPException(message=result["description"])
-    return True
+    return (True, "")

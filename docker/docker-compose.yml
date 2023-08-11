@@ -51,10 +51,26 @@ services:
       # TODO: Determine if this is the best way to share certificates between containers
       - "ldap_certs:${FASTAPI_LDAP_CERTS}:ro"
     ports:
-      # TODO figure out what is on port 5000, kill it, and change this to port 5000
+      # TODO Change this to port 5000 when deploying
       - "5001:5001"
     networks:
       - registration-app
+
+# TODO Add this back in
+  # vue:
+    # container_name: "vue"
+    # build:
+      # context: "$PWD/../typescript/registration_app"
+      # dockerfile: "$PWD/vue/Dockerfile"
+    # depends_on:
+      # - "fastapi"
+    # ports:
+      # - "80:80"
+    # networks:
+      # - "registration-app"
+
+
+
 
 volumes:
   pgdata:

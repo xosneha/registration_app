@@ -8,7 +8,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import load_only
 from sqlmodel import select
 
-from registration_app.api.models import JWTToken, UserProfileResponse
+from registration_app.api.models import (JWTToken, TokenData,
+                                         UserProfileResponse)
 from registration_app.authenticate import (create_access_token,
                                            create_user_in_ldap,
                                            decode_access_token,
@@ -54,7 +55,6 @@ async def user_login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()], request: Request
 ):
     """Authenticate to the application."""
-    # TODO support email based authentication
     if not user_authenticate(form_data.username, form_data.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -75,8 +75,9 @@ async def user_login(
 
 
 @app.get(f"/user_profile", status_code=200, response_model=UserProfileResponse)
-async def user_profile(username: str):
+async def user_profile(user: Annotated[TokenData, Depends(get_user)]):
     """Get user profile information from the db"""
+    username = user.username
     with get_session() as session:
         user_basics = session.exec(
             select(UserInfo).where(UserInfo.username == username)
@@ -100,7 +101,7 @@ def generate_session_info(request: Request, username, user_country: str) -> Sess
     browser = "Other"
     user_agent = request.headers["user-agent"]
     # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Browser_detection_using_the_user_agent
-    # TODO determine if this is a good list of browsers
+    # for the list of browsers used
     if "Seamonkey" in user_agent:
         browser = "Seamonkey"
     elif "Firefox" in user_agent:
@@ -129,10 +130,11 @@ def generate_session_info(request: Request, username, user_country: str) -> Sess
 async def user_registration(
     user: Annotated[UserInfoCreate, Body(embed=True)], request: Request
 ):
-    if not create_user_in_ldap(user=user):
+    result, reason = create_user_in_ldap(user=user)
+    if not result:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Username is already taken",
+            detail=f"{reason.capitalize()} is already taken",
         )
     # TODO Fix
     session_info = generate_session_info(
