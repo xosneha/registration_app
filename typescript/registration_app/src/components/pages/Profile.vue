@@ -40,7 +40,6 @@ function modifyPage(update: number) {
     page.value -= 1
   }
 }
-console.log(profileData.user_basics.thumbnail)
 
 function resetPage() {
   page.value = 0

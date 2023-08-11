@@ -42,6 +42,7 @@ export type State = {
 }
 
 const toast = useToast()
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default createStore<State>({
   state(): State {
@@ -67,7 +68,7 @@ export default createStore<State>({
     async registerUser(context: any, data: RegisterUserData) {
       try {
         const token = await axios.post<any, AxiosResponse<TokenResponse>>(
-          'http://localhost:5001/user_register',
+          `${BASE_URL}/user_register`,
           { user: data }
         )
         context.commit('SET_TOKEN', token.data['access_token'])
@@ -82,7 +83,7 @@ export default createStore<State>({
       formData.append('password', data.password)
       try {
         const token = await axios.post<any, AxiosResponse<TokenResponse>>(
-          'http://localhost:5001/user_login',
+          `${BASE_URL}/user_login`,
           formData
         )
         context.commit('SET_TOKEN', token.data['access_token'])
@@ -95,7 +96,7 @@ export default createStore<State>({
       const token = context.getters.token
       try {
         const profile = await axios.get<any, AxiosResponse<UserProfileResponse>>(
-          'http://localhost:5001/user_profile',
+          `${BASE_URL}/user_profile`,
           { headers: { Authorization: `Bearer ${token}` } }
         )
         context.commit('SET_PROFILE', profile['data'])

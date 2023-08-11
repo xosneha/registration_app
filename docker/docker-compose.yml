@@ -55,19 +55,17 @@ services:
       - "5001:5001"
     networks:
       - registration-app
-
-# TODO Add this back in
-  # vue:
-    # container_name: "vue"
-    # build:
-      # context: "$PWD/../typescript/registration_app"
-      # dockerfile: "$PWD/vue/Dockerfile"
-    # depends_on:
-      # - "fastapi"
-    # ports:
-      # - "80:80"
-    # networks:
-      # - "registration-app"
+  vue:
+    container_name: "vue"
+    build:
+      context: "$PWD/../typescript/registration_app"
+      dockerfile: "$PWD/vue/Dockerfile"
+    depends_on:
+      - "fastapi"
+    ports:
+      - "80:80"
+    networks:
+      - "registration-app"
 
 
 
