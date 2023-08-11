@@ -1,21 +1,28 @@
 """Module housing API routes."""
+import os
 import re
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Body, Depends, FastAPI, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import load_only
 from sqlmodel import select
 
-from registration_app.api.models import (JWTToken, TokenData,
-                                         UserProfileResponse)
-from registration_app.authenticate import (create_access_token,
-                                           create_user_in_ldap,
-                                           decode_access_token,
-                                           user_authenticate)
+from registration_app import load_env
+from registration_app.api.models import JWTToken, TokenData, UserProfileResponse
+from registration_app.authenticate import (
+    create_access_token,
+    create_user_in_ldap,
+    decode_access_token,
+    user_authenticate,
+)
 from registration_app.orm.database import create_db_and_tables, get_session
 from registration_app.orm.models import SessionInfo, UserInfo, UserInfoCreate
+
+load_env()
+
+import ipinfo
 
 app = FastAPI()
 TOKEN_URL = "user_login"
@@ -62,9 +69,7 @@ async def user_login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     # TODO Fix this
-    session_info = generate_session_info(
-        request=request, username=form_data.username, user_country="Fakestr"
-    )
+    session_info = generate_session_info(request=request, username=form_data.username)
     with get_session() as session:
         session.add(SessionInfo.from_orm(session_info))
         session.commit()
@@ -74,7 +79,7 @@ async def user_login(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.get(f"/user_profile", status_code=200, response_model=UserProfileResponse)
+@app.get(f"/user_profile", status_code=200)
 async def user_profile(user: Annotated[TokenData, Depends(get_user)]):
     """Get user profile information from the db"""
     username = user.username
@@ -95,7 +100,7 @@ async def user_profile(user: Annotated[TokenData, Depends(get_user)]):
 
 
 # TODO Add user country to frontend
-def generate_session_info(request: Request, username, user_country: str) -> SessionInfo:
+def generate_session_info(request: Request, username) -> SessionInfo:
     user_ip = request.client.host
     user_time = datetime.now(timezone.utc)
     browser = "Other"
@@ -116,13 +121,20 @@ def generate_session_info(request: Request, username, user_country: str) -> Sess
         browser = "Safari"
     elif "OPR" or "Opera" in user_agent:
         browser = "Opera"
+    # TODO Test me!
+    handler = ipinfo.getHandler(access_token=os.environ["IPINFO_TOKEN"])
+    details = handler.getDetails(user_ip)
+
+    # TODO
+    # user_country = details.country_name
 
     return SessionInfo(
         username=username,
         time=user_time,
         ip=user_ip,
         browser=browser,
-        country=user_country,
+        # country=user_country,
+        country="fake",
     )
 
 
@@ -137,9 +149,7 @@ async def user_registration(
             detail=f"{reason.capitalize()} is already taken",
         )
     # TODO Fix
-    session_info = generate_session_info(
-        request=request, username=user.username, user_country="fakeStr"
-    )
+    session_info = generate_session_info(request=request, username=user.username)
     with get_session() as session:
         session.add(UserInfo.from_orm(user))
         session.commit()

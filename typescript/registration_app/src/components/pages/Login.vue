@@ -1,30 +1,29 @@
 <script setup lang="ts">
-import { ref } from "vue"
-import { useStore } from "vuex";
-import { useRouter } from "vue-router";
+import { ref } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 
-const store = useStore();
-const router = useRouter();
+const store = useStore()
+const router = useRouter()
 
-const username = ref("");
-const password = ref("");
+const username = ref('')
+const password = ref('')
 
 async function onLogin(e: any) {
   try {
-    await store.dispatch("loginUser", {
-        username: username.value,
-        password: password.value,
+    await store.dispatch('loginUser', {
+      username: username.value,
+      password: password.value
     })
-    router.push("/profile")
-  } catch(error) {
-    return;
+    router.push('/profile')
+  } catch (error) {
+    return
   }
 }
 
 function onNavigateToRegister() {
-  router.push("/register")
+  router.push('/register')
 }
-
 </script>
 
 <template>
@@ -34,12 +33,17 @@ function onNavigateToRegister() {
     </header>
     <form @submit.prevent="onLogin">
       <label for="username">Username or Email</label>
-      <input v-model="username" name="username" type="text" placeholder="Enter username or email here"/>
+      <input
+        v-model="username"
+        name="username"
+        type="text"
+        placeholder="Enter username or email here"
+      />
 
       <label for="password">Password</label>
-      <input v-model="password" name="password" type="password" placeholder="Enter password"/>
+      <input v-model="password" name="password" type="password" placeholder="Enter password" />
 
-      <button  type="submit" class="loginbtn">Login</button>
+      <button type="submit" class="loginbtn">Login</button>
     </form>
     <button @click="onNavigateToRegister" class="registerbtn">Go to Registration Page</button>
   </main>
@@ -56,7 +60,7 @@ input {
 }
 
 button {
-  background-color: #04AA6D;
+  background-color: #04aa6d;
   color: white;
   padding: 16px 20px;
   margin: 8px 0;
@@ -67,13 +71,12 @@ button {
 }
 
 button:hover {
-  opacity:1;
+  opacity: 1;
 }
 
 .registerbtn {
-  background-color: #107AB0;
+  background-color: #107ab0;
 }
-
 
 main {
   display: flex;
@@ -85,5 +88,4 @@ main {
 header {
   margin-bottom: 15px;
 }
-
 </style>

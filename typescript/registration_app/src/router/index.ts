@@ -9,18 +9,18 @@ const router = createRouter({
     {
       path: '/',
       name: 'login',
-      component: Login,
+      component: Login
     },
     {
       path: '/register',
       name: 'register',
-      component: Registration,
+      component: Registration
     },
     {
       path: '/profile',
       name: 'profile',
-      component: Profile,
-    },
+      component: Profile
+    }
   ]
 })
 

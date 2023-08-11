@@ -1,36 +1,35 @@
 <script setup lang="ts">
-import { ref } from "vue"
-import { useStore } from "vuex";
-import { useRouter } from "vue-router";
+import { ref } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 
-const store = useStore();
-const router = useRouter();
+const store = useStore()
+const router = useRouter()
 
-const first = ref("");
-const last = ref("");
-const username = ref("");
-const email = ref("");
-const password = ref("");
+const first = ref('')
+const last = ref('')
+const username = ref('')
+const email = ref('')
+const password = ref('')
 
 async function onRegister(e: any) {
   try {
-    await store.dispatch("registerUser", {
-        first: first.value,
-        last: last.value,
-        username: username.value,
-        email: email.value,
-        password: password.value,
+    await store.dispatch('registerUser', {
+      first: first.value,
+      last: last.value,
+      username: username.value,
+      email: email.value,
+      password: password.value
     })
-    router.push("/profile")
-  } catch(error) {
-    return;
+    router.push('/profile')
+  } catch (error) {
+    return
   }
 }
 
 function onNavigateToLogin() {
-  router.push("/")
+  router.push('/')
 }
-
 </script>
 
 <template>
@@ -40,19 +39,26 @@ function onNavigateToLogin() {
     </header>
     <form @submit.prevent="onRegister">
       <label for="first">First Name</label>
-      <input v-model="first" name="first" type="text" placeholder="Enter first name" required/>
+      <input v-model="first" name="first" type="text" placeholder="Enter first name" required />
 
       <label for="last">Last Name</label>
-      <input v-model="last" name="last" type="text" placeholder="Enter last name" requied/>
+      <input v-model="last" name="last" type="text" placeholder="Enter last name" requied />
 
       <label for="username">Username</label>
-      <input v-model="username" name="username" type="text" placeholder="Enter username" required/>
+      <input v-model="username" name="username" type="text" placeholder="Enter username" required />
 
       <label for="email">Email</label>
-      <input v-model="email" name="email" type="email" placeholder="Enter email" required/>
+      <input v-model="email" name="email" type="email" placeholder="Enter email" required />
 
       <label for="password">Password</label>
-      <input v-model="password" name="password" type="password" placeholder="Enter password" required minlength="6"/>
+      <input
+        v-model="password"
+        name="password"
+        type="password"
+        placeholder="Enter password"
+        required
+        minlength="6"
+      />
 
       <button type="submit" class="registerbtn">Register</button>
     </form>
@@ -71,7 +77,7 @@ input {
 }
 
 button {
-  background-color: #04AA6D;
+  background-color: #04aa6d;
   color: white;
   padding: 16px 20px;
   margin: 8px 0;
@@ -82,11 +88,11 @@ button {
 }
 
 button:hover {
-  opacity:1;
+  opacity: 1;
 }
 
 .loginbtn {
-  background-color: #107AB0;
+  background-color: #107ab0;
 }
 
 main {

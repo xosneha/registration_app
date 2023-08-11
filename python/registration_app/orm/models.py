@@ -1,9 +1,12 @@
 """Module housing all the models stored in the application."""
+import base64
 import datetime
-from random import randint
+import random
+from io import BytesIO
 from typing import Optional
 from uuid import UUID, uuid4
 
+from PIL import Image
 from pydantic import EmailStr
 from pydantic import Field as PydanticField
 from pydantic import SecretStr, ValidationError, validator
@@ -19,13 +22,23 @@ class UserInfoBase(SQLModel):
     last: str
 
 
+def thumbnail_generator():
+    image = Image.new("RGB", (200, 200))
+    for x in range(image.width):
+        for y in range(image.height):
+            image.putpixel(
+                (x, y), random.choice([(255, 0, 0), (0, 0, 255), (255, 255, 0)])
+            )
+    buffered = BytesIO()
+    image.save(buffered, "PNG")
+    return base64.b64encode(buffered.getvalue())
+
+
 class UserInfo(UserInfoBase, table=True):
     """Information about a particular user, as stored in the database."""
 
-    # TODO Put this in
-    thumbnail: bytes = Field(
-        default_factory=lambda: bytes([randint(1, 3) for _ in range(1024)])
-    )
+    # TODO Use this in frontend
+    thumbnail: bytes = Field(default_factory=thumbnail_generator)
 
 
 class UserInfoCreate(UserInfoBase):

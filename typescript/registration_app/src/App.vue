@@ -9,7 +9,7 @@ import { RouterView } from 'vue-router'
 </template>
 
 <style>
-#app{
+#app {
   display: flex;
 }
 </style>
