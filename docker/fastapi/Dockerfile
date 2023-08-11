@@ -12,7 +12,7 @@ ADD /registration_app /fastapi/registration_app/
 RUN poetry install --only-root
 
 
-CMD ["uvicorn", "registration_app.api.main:app", "--host", "0.0.0.0", "--port", "5001", "--proxy-headers", "--forwarded-allow-ips", "'*'"]
+CMD ["uvicorn", "registration_app.api.main:app", "--host", "0.0.0.0", "--port", "5001", "--forwarded-allow-ips", "'*'"]
 
 
 

@@ -67,9 +67,6 @@ services:
     networks:
       - "registration-app"
 
-
-
-
 volumes:
   pgdata:
   ldap_db:

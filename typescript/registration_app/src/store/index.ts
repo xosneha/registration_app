@@ -42,7 +42,7 @@ export type State = {
 }
 
 const toast = useToast()
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 export default createStore<State>({
   state(): State {
@@ -51,7 +51,8 @@ export default createStore<State>({
     }
   },
   getters: {
-    token: (state: State) => localStorage.getItem('token')
+    token: (state: State) => localStorage.getItem('token'),
+    ipAddress: (state: State) => localStorage.getItem('clientIP')
   },
   actions: {
     formError(context: any, msg: string) {
@@ -65,11 +66,18 @@ export default createStore<State>({
       }
       toast.error(`${response.status}: ${JSON.stringify(data.response?.data)}`)
     },
+    async fetchIpAddress(context: any) {
+      const response = await axios.get<any, AxiosResponse<{ ip: string }>>(
+        'https://api.ipify.org?format=json'
+      )
+      context.commit('SET_IP', response.data.ip)
+    },
     async registerUser(context: any, data: RegisterUserData) {
       try {
         const token = await axios.post<any, AxiosResponse<TokenResponse>>(
           `${BASE_URL}/user_register`,
-          { user: data }
+          { user: data },
+          { headers: { 'X-Real-IP': context.getters.ipAddress } }
         )
         context.commit('SET_TOKEN', token.data['access_token'])
       } catch (error) {
@@ -84,7 +92,8 @@ export default createStore<State>({
       try {
         const token = await axios.post<any, AxiosResponse<TokenResponse>>(
           `${BASE_URL}/user_login`,
-          formData
+          formData,
+          { headers: { 'X-Real-IP': context.getters.ipAddress } }
         )
         context.commit('SET_TOKEN', token.data['access_token'])
       } catch (error) {
@@ -109,6 +118,9 @@ export default createStore<State>({
   mutations: {
     SET_TOKEN(state: State, token: string) {
       localStorage.setItem('token', token)
+    },
+    SET_IP(state: State, clientIp: string) {
+      localStorage.setItem('clientIP', clientIp)
     },
     SET_PROFILE(state: State, profile: any) {
       state.profile = profile

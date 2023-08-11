@@ -37,7 +37,6 @@ def thumbnail_generator():
 class UserInfo(UserInfoBase, table=True):
     """Information about a particular user, as stored in the database."""
 
-    # TODO Use this in frontend
     thumbnail: bytes = Field(default_factory=thumbnail_generator)
 
 
@@ -48,7 +47,6 @@ class UserInfoCreate(UserInfoBase):
     password: SecretStr = PydanticField(min_length=6)
 
 
-# TODO add browser history
 class SessionInfo(SQLModel, table=True):
     """Creates user session information table"""
 
